@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/PabloSalvans/pw_exam_july_2025#readme",
   "devDependencies": {
+    "@faker-js/faker": "^9.9.0",
     "@playwright/test": "^1.53.2",
     "@types/node": "^24.0.10"
   }
