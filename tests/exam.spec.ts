@@ -1,7 +1,8 @@
 import { expect, test } from '../fixtures/fixtures';
 import { generateNewUserDataSet } from '../utils.ts';
 
-test('exam', async ({ pageManager }) => {
+test('Exam Pablo Salvans', async ({ pageManager }) => {
+  test.slow();
   const userData = generateNewUserDataSet();
   await test.step('Ve a la página: https://parabank.parasoft.com/', async () => {
     await pageManager.onHomePage().navigation();
@@ -14,7 +15,10 @@ test('exam', async ({ pageManager }) => {
   });
 
   await test.step('Rellena y envía el formulario para registrar un nuevo usuario', async () => {
-    await pageManager.onRegisterPage().registerNewUser(userData, 100);
+    const registrationStatus = await pageManager
+      .onRegisterPage()
+      .registerNewUser(userData, 100);
+    expect(registrationStatus).toEqual(200);
     await expect(pageManager.onHomePage().logoutButton).toBeVisible();
   });
 
@@ -24,9 +28,9 @@ test('exam', async ({ pageManager }) => {
   });
 
   await test.step('Inicia sesión con los datos de tu nuevo usuario”', async () => {
-    await pageManager.onHomePage().loginUsernameField.fill(userData.userName);
-    await pageManager.onHomePage().loginPasswordField.fill(userData.password);
-    await pageManager.onHomePage().loginButton.click();
-    await expect(pageManager.onHomePage().logoutButton).toBeVisible();
+    await pageManager
+      .onHomePage()
+      .loginWithReattempts(userData.userName, userData.password, 20);
+    await expect(pageManager.onOverviewPage().component).toBeVisible();
   });
 });

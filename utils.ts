@@ -18,11 +18,7 @@ export function generateNewUserDataSet(): parabankUser {
     state: faker.location.state(),
     zipCode: faker.location.zipCode(),
     phoneNumber: faker.phone.number(),
-    ssNumber: 'AAA-GG-SSSS',
-
-    //   userName: faker.internet.email({
-    //     lastName: randomNumber as unknown as string,
-    //   }),
+    ssNumber: '078-05-1120',
     userName: `${randomString}${randomNumber}@${randomDomain}`,
     password: faker.internet.password(),
   };

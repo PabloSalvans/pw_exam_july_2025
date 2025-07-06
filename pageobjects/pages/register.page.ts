@@ -1,7 +1,6 @@
 import { Locator, Page } from '@playwright/test';
 import { parabankUser } from '../../fixtures/types';
 import { faker } from '@faker-js/faker/locale/en_US';
-import { error, log } from 'console';
 
 export class RegisterPage {
   get URL(): string {
@@ -47,7 +46,7 @@ export class RegisterPage {
   async registerNewUser(
     userData: parabankUser,
     maxTriesToFindAcceptedUsername: number
-  ) {
+  ): Promise<number> {
     await this.firstNameField.fill(userData.firstName);
     await this.lastNameField.fill(userData.lastName);
     await this.addressField.fill(userData.address);
@@ -59,6 +58,9 @@ export class RegisterPage {
     await this.usernameField.fill(userData.userName);
     await this.passwordField.fill(userData.password);
     await this.confirmPasswordField.fill(userData.password);
+    const responsePromise = this.page.waitForResponse(
+      'https://parabank.parasoft.com/parabank/register.htm'
+    );
     await this.registerButton.click();
     if (await this.userAlreadyExists(1000)) {
       await this.findAcceptedUsernameAndPasswordAndSubmit(
@@ -66,6 +68,8 @@ export class RegisterPage {
         maxTriesToFindAcceptedUsername
       );
     }
+    const response = await responsePromise;
+    return response.status();
   }
 
   async findAcceptedUsernameAndPasswordAndSubmit(
@@ -74,29 +78,38 @@ export class RegisterPage {
   ): Promise<string> {
     let tries = 0;
     let acceptedEmail = userData.userName;
-    while (tries < maxTries && (await this.userAlreadyExists(1000))) {
-      let randomString = faker.string.alpha({ length: 6 });
-      let randomNumber = faker.number.int({ min: 1000, max: 9999 });
-      let randomDomain = faker.helpers.arrayElement([
-        'gmail.com',
-        'yahoo.com',
-        'hotmail.com',
-      ]);
-      const nextEmailTry = `${randomString}${randomNumber}@${randomDomain}`;
-      await this.usernameField.fill(nextEmailTry);
-      await this.passwordField.fill(userData.password);
-      await this.confirmPasswordField.fill(userData.password);
-      await this.registerButton.click();
-      acceptedEmail = nextEmailTry;
-      tries++;
-    }
+    const triedEmails: string[] = [];
     try {
-      tries < maxTries;
-      return acceptedEmail;
-    } catch {
-      error(`None of the ${maxTries} passed the bug about existing users`);
-      return '';
+      while (tries < maxTries && (await this.userAlreadyExists(1000))) {
+        const randomString = faker.string.alpha({ length: 6 });
+        const randomNumber = faker.number.int({ min: 1000, max: 9999 });
+        const randomDomain = faker.helpers.arrayElement([
+          'gmail.com',
+          'yahoo.com',
+          'hotmail.com',
+        ]);
+        const nextEmailTry = `${randomString}${randomNumber}@${randomDomain}`;
+        await this.usernameField.fill(nextEmailTry);
+        await this.passwordField.fill(userData.password);
+        await this.confirmPasswordField.fill(userData.password);
+        await this.registerButton.click();
+        acceptedEmail = nextEmailTry;
+        triedEmails.push(acceptedEmail);
+        tries++;
+      }
+    } catch (error) {
+      const errorMessage = [
+        `REGISTRATION FAILED`,
+        `Attempts: ${tries}`,
+        `Usernames: ${triedEmails}`,
+        `Original error: ${error.message}`,
+      ].join('\n');
+      throw new Error(errorMessage);
     }
+    console.log(
+      `Accepted user: '${acceptedEmail}'. Password: ${userData.password}`
+    );
+    return acceptedEmail;
   }
 
   async userAlreadyExists(setTimeout: number): Promise<boolean> {

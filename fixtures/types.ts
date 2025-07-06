@@ -1,5 +1,3 @@
-import { PageManager } from '../pageManagers/pageManager';
-
 export type parabankUser = {
   firstName: string;
   lastName: string;
